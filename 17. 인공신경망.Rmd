@@ -1,0 +1,133 @@
+# 인공신경망
+
+```{r}
+# 1. dataset 정렬 (ex. iris Species 50개씩 정렬돼있듯이)
+head(iris)
+```
+
+학습용 데이터와 검증용 데이터 분리
+
+```{r}
+set.seed(1234)
+samp<-c(sample(1:50,35),sample(51:100,35),sample(101:150,35))
+samp
+```
+
+학습용 데이터 생성
+
+```{r}
+data.train<-iris[samp,]
+```
+
+검증용 데이터 생성
+
+```{r}
+data.test<-iris[-samp,]
+```
+
+데이터 분류 확인하기
+
+```{r}
+summary(data.train)
+summary(data.test)
+```
+
+인공신경망으로 학습시키기 (nnet)
+
+```{r}
+library(nnet)
+```
+
+모델 만들기
+
+```{r}
+model.nnet<-nnet(Species~., data=data.train, size=3)
+# size: 은닉층 갯수
+```
+
+문제 만들기
+
+```{r}
+x<-subset(data.test,select=-Species)
+head(x)
+```
+
+정답 만들기
+
+```{r}
+y<-data.test$Species
+head(y)
+```
+
+검증
+
+```{r}
+# pred: 답안지
+pred<-predict(model.nnet, x,type="class")
+# 객관식: class (classification)
+# 주관식: raw
+head(pred)
+```
+
+예측력 확인
+
+```{r}
+mean(pred == y)*100
+```
+
+정오표 확인
+
+```{r}
+table(pred,y)
+```
+
+사용가능하다고 판단되면 '모든 데이터' (iris)를 기준으로 학습
+
+```{r}
+model.nnet<-nnet(Species~.,data=iris,size=3)
+```
+
+Sepal.Length=5.3
+
+Sepal.Width=3.3
+
+Petal.Length=1.6
+
+Petal.Width=0.3
+
+```{r}
+myiris<-c(5.3,3.3,1.6,0.3)
+myiris<-as.data.frame(t(myiris))
+colnames(myiris)<-colnames(iris[,1:4])
+myiris
+```
+
+```{r}
+predict(model.nnet, myiris, type="class")
+```
+
+```{r}
+# 데이터프레임 한 줄일 경우 list 활용
+predict(model.nnet, list(Sepal.Length=5.3,
+                         Sepal.Width=3.3,
+                         Petal.Length=1.6,
+                         Petal.Width=0.3),type="class")
+```
+
+Sepal.Length=9.3
+
+Sepal.Width=2.2
+
+Petal.Length=7.5
+
+Petal.Width=3.5
+
+```{r}
+predict(model.nnet, list(Sepal.Length=9.3,
+                         Sepal.Width=2.2,
+                         Petal.Length=7.5,
+                         Petal.Width=3.5),type="class")
+
+boxplot(iris) # <= 데이터범위 (mix,max)를 지정해줘야함
+# 지정 안하면 단순회귀식으로 분석함
+```

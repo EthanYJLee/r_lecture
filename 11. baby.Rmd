@@ -1,0 +1,77 @@
+### 1880년부터 2014년까지의 미국의 아기이름을 정리해놓은 데이터셋
+
+```{r}
+baby <- read.csv("./Data/R_Baby_Names_1880-2014.csv")
+head(baby)
+tail(baby)
+str(baby)
+summary(baby)
+```
+
+Baby의 Year부분 정리하기
+
+```{r}
+str(baby)
+head(baby)
+
+baby$Year<-substring(baby$Year,7,10)
+head(baby)
+```
+
+저장하여 File크기 비교하기
+
+```{r}
+write.csv(baby, "./Data/R_Baby_Names_Year_1880-2014.csv", row.names=F)
+```
+
+baby에서 여자아이만 Female이라는 Dataset을 만들고 row수 구하기
+
+```{r}
+male <- subset(baby, Gender=='M')
+female <- subset(baby, Gender=='F')
+tail(female)
+
+nrow(baby)
+nrow(male)
+nrow(female)
+```
+
+여자아이 이름 가짓수
+
+```{r}
+unique(subset(female, select=Name))
+length(unique(female$Name))
+```
+
+### 여자아이 이름 중 가장 많이 사용된 이름과 Count수 구하기
+
+```{r}
+library(dplyr)
+head(arrange(aggregate(Count~Name, female, sum),desc(Count)),1)
+head(arrange(aggregate(Count~Name, female, sum),desc(Count)),5)
+```
+
+### 1880\~2014년 인구분포 현황
+
+```{r}
+malePopulation<-aggregate(Count~Year, male, sum)
+femalePopulation<-aggregate(Count~Year, female, sum)
+
+population<-as.data.frame(cbind(malePopulation$Year,malePopulation$Count,femalePopulation$Count))
+colnames(population)<- c("Year", "Male","Female")
+population
+```
+
+```{r}
+plot(population$Year,population$Male,
+     main="1880~2014년 인구분포 현황",
+     type="l",
+     col = "skyblue",
+     ylim = c(0,2500000)
+     
+)
+lines(population$Year,population$Female,
+      type="l",
+      col = "orange"
+      )
+```

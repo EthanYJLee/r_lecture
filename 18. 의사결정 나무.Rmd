@@ -1,0 +1,51 @@
+# 의사결정 나무 (Decision Tree)
+
+스무고개 알고리즘화 (분류)
+
+분류(ex. setosa, versicolor, verginica)가 많아진다면?
+
+```{r}
+install.packages("party")
+library(party)
+```
+
+```{r}
+install.packages("caret")
+library(caret)
+```
+
+Sampling
+
+\*createDataPartition(대상컬럼, 비율, list=F)
+
+```{r}
+set.seed(1234)
+samp<-createDataPartition(iris$Species,p=0.7,list=F)
+samp
+```
+
+```{r}
+data.train<-iris[samp,]
+data.test<-iris[-samp,]
+```
+
+```{r}
+x<-subset(data.test,select=-Species)
+y<-data.test$Species
+```
+
+```{r}
+iris_tree<-ctree(Species~.,data=data.train)
+```
+
+Test
+
+```{r}
+pred<-predict(iris_tree,x)
+head(pred)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```

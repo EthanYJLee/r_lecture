@@ -1,0 +1,41 @@
+``` {y{r}
+a <- c(8,10,11)
+if(a %% 2 == 0){
+  cat(a,"는 짝수입니다. \n")
+}else{
+  cat(a,"는 홀수입니다.")
+}
+```
+
+```{r}
+a <- c(8,10,11)
+
+ifelse(a %% 2 == 0, paste(a,":짝수"), paste(a,":홀수"))
+
+```
+
+csv file을 불러서 사용
+
+```{r}
+excel <- read.csv("./Data/excel.csv")
+str(excel)
+head(excel)
+tail(excel)
+summary(excel)
+class(excel)
+excel
+```
+
+q1컬럼에서 Data가 3보다 크거나 같으면 data의 제곱근을 구하고 아니면 원래 data를 출력하기
+
+```{r}
+q1 <- excel$q1
+excel$q6 <- ifelse(q1>=3, sqrt(q1), q1); excel
+```
+
+```{r}
+# score가 80점 이상이면 우수, 아니면 노력이라고 출력하기
+score <- c(78, 85, 95, 65, 100)
+school <- data.frame(score,ifelse(score>=80, "우수", "노력"))
+school
+```

@@ -1,0 +1,60 @@
+# 함수
+
+함수는 코드의 집합이다.
+
+```{r}
+vec <- 10:20
+
+# 자주쓰는 내장함수
+
+min(vec)
+max(vec)
+mean(vec)
+median(vec)
+sum(vec)
+sd(vec)
+summary(vec)
+table(vec)
+range(vec)
+```
+
+```{r}
+# **************************************************************
+gugu <- function((a:b),(i:j)){
+  for(){
+    cat(a,"X",i,"=",r,"\n")
+  }
+}
+```
+
+결측치(na) 자료 평균 계산
+
+```{r}
+data <- c(10, 20, 5, 4, 40, 7, NA, 6, 3, NA, 2, NA)
+sum(is.na(data))
+```
+
+```{r}
+mean(data, na.rm=T)
+```
+
+```{r}
+# 1) NA <- 0
+mean(ifelse(is.na(data),0,data))
+```
+
+```{r}
+mean(ifelse(is.na(data),mean(data, na.rm=T),data))
+```
+
+```{r}
+# ***************************************************************************
+# NA는 대부분 중앙값으로 대체
+# NA 갯수가 40% 상회하는 컬럼은 사용불가
+
+median(ifelse(is.na(data),median(data, na.rm=T),data))
+```
+
+```{r}
+mean(ifelse(is.na(data),min(data, na.rm=T),data))
+```

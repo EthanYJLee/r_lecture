@@ -1,0 +1,117 @@
+# 주성분 분석
+
+서로 연관되어있는 변수들이 관측되었을때, 이 변수들이 전체적으로 가지고 있는 정보를 최대한 확보하는 적은수의 변수를 생성하는 방법
+
+### 설문지를 이용한 주성분 분석
+
+```{r}
+data<-read.table("./Data/pasta.txt")
+head(data)
+str(data)
+```
+
+다중 공선성 확인 : 너무 상관이 높아서 마치 쌍둥이 데이터인 것 찾기
+
+```{r}
+cor(data)
+```
+
+```{r}
+summary(data)
+```
+
+표준화: (summary확인 후)평균을 0으로, 표준편차를 1로 변경하는 작업
+
+```{r}
+str(data)
+```
+
+\>\>\>scale함수\<\<\< (표준화 자동)
+
+```{r}
+data1<-scale(data)
+summary(data1)
+apply(data1,2,sd)
+```
+
+다른 컬럼을 감싸는 컬럼이 존재하면 표준화 크게 필요없음 (표준화는 각각 떨어져 있을 경우에만 쓴다)
+
+```{r}
+summary(iris)
+```
+
+```{r}
+p1<-prcomp(data,scale=T)
+biplot(p1)
+```
+
+```{r}
+ramen<-read.table("./Data/라면.txt")
+colnames(ramen)<-c("이름",ramen[1,2:4])
+ramen<-ramen[-1,]
+ramen
+for(i in 2:4){
+  ramen[,i]<-as.numeric(ramen[,i])
+}
+rownames(ramen)<-ramen[,1]
+ramen<-ramen[,-1]
+```
+
+```{r}
+ramen1<-prcomp(ramen,scale=T)
+biplot(ramen1)
+```
+
+US Arrests
+
+이 데이터 세트에는 1973년 미국 50개주에서 각각 10만명당 폭행, 살인, 강간으로 체포된 통계
+
+도시지역에 살고 있는 인구 비율도 있음.
+
+```{r}
+head(USArrests)
+```
+
+상관계수
+
+```{r}
+cor(USArrests)
+```
+
+주성분 분석
+
+```{r}
+result<-princomp(USArrests, cor=T)
+summary(result)
+```
+
+```{r}
+biplot(result)
+```
+
+```{r}
+result$loadings
+```
+
+1주성분으로 새로운 변수값 생성
+
+```{r}
+score<-0.536*USArrests$Murder+0.583*USArrests$Assault+0.278*USArrests$UrbanPop+0.543*USArrests$Rape
+score
+```
+
+states와 주성분으로 데이터프레임
+
+```{r}
+Result<-data.frame(States=rownames(USArrests),Score=score)
+head(Result)
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+head(arrange(Result,desc(Score)),10)
+head(arrange(Result,Score),10)
+```

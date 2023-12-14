@@ -1,0 +1,190 @@
+```{r}
+train_df<-read.csv("./Data/Titanic_train.csv")
+```
+
+절반 이상의 승객이 Southampton에서 배를 탔으며 여기에서 탑승한 승객의 70%가 남성이었으며
+
+남성의 사망률이 여성보다 훨씬 높았으므로 Southampton의 사망률이 높게 나왔으며
+
+Southampton에서 탑승한 승객의 60%이상이 3등급 객실을 사용했다.
+
+C항구에서 탑승한 승객들은 1등 객실 비중 및 생존률이 높은 것으로 보아 이 동네는 부자동네이다.
+
+## RandomForest로 예측 모델 생성
+
+```{r}
+cor(train_df$Survived,train_df$Pclass)
+```
+
+target+feature df 생성
+
+```{r}
+train_df$Embarked[train_df$Embarked==""]<-"S"
+train_df_T<-data.frame(train_df$Survived,train_df$Sex,train_df$Pclass,train_df$Embarked)
+train_df_T
+```
+
+컬럼명
+
+```{r}
+target_col<-c("Survived","SexCode","Pclass","Embarked")
+colnames(train_df_T)<-target_col
+train_df_T
+```
+
+숫자변환
+
+```{r}
+train_df_T$SexCode<-as.integer(as.factor(train_df_T$SexCode))-1
+train_df_T
+```
+
+Embarked를 One-Hot Encoding
+
+```{r}
+train_df_T$Embarked_C<-train_df_T$Embarked=="C"
+train_df_T$Embarked_S<-train_df_T$Embarked=="S"
+train_df_T$Embarked_Q<-train_df_T$Embarked=="Q"
+head(train_df_T[c("Embarked","Embarked_C","Embarked_S","Embarked_Q")])
+train_df_T<-train_df_T[,-4]
+train_df_T
+```
+
+```{r}
+target_col=c("Survived","SexCode","Pclass","Embarked_C","Embarked_S","Embarked_Q")
+```
+
+## RandomForest
+
+```{r}
+library(caret)
+set.seed(1234)
+samp<-createDataPartition(train_df_T$Survived,p=0.7,list=F)
+```
+
+```{r}
+data.train<-train_df_T[samp,]
+data.test<-train_df_T[-samp,]
+```
+
+```{r}
+train_data<-data.train[target_col]
+head(train_data)
+```
+
+```{r}
+test_data<-data.test[target_col]
+```
+
+```{r}
+library(randomForest)
+```
+
+학습시키기
+
+```{r}
+rf<-randomForest(Survived~.,data=train_data,ntree=100)
+```
+
+```{r}
+x<-subset(test_data, select=-Survived)
+y<-test_data$Survived
+pred<-predict(rf,x)
+head(pred)
+```
+
+```{r}
+pred[pred<=0.5]<-0
+pred[pred>0.5]<-1
+head(pred)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
+
+## Survived를 factor로 변환후 RandomForest
+
+```{r}
+train_data$Survived<-as.factor(train_data$Survived)
+test_data$Survived<-as.factor(test_data$Survived)
+```
+
+```{r}
+str(train_data)
+```
+
+```{r}
+rf<-randomForest(Survived~.,data=train_data,ntree=100)
+x<-subset(test_data,select=-Survived)
+pred<-predict(rf,x)
+head(pred)
+```
+
+```{r}
+mean(pred==test_data$Survived)
+table(pred,test_data$Survived)
+```
+
+## 인공신경망
+
+```{r}
+library(nnet)
+```
+
+```{r}
+train_df_T$Survived<-as.factor(train_df_T$Survived)
+samp<-createDataPartition(train_df_T$Survived,p=0.7,list=F)
+data.train<-train_df_T[samp,]
+data.test<-train_df_T[-samp,]
+x<-subset(data.test,select=-Survived)
+y<-data.test$Survived
+model.nnet<-nnet(Survived~.,data=data.train,size=3)
+pred.nnet<-predict(model.nnet,x,type="class")
+```
+
+```{r}
+mean(pred.nnet==y)
+table(pred.nnet,y)
+```
+
+## SVM
+
+```{r}
+library(e1071)
+```
+
+```{r}
+samp<-createDataPartition(train_df_T$Survived,p=0.7,list=F)
+data.train<-train_df_T[samp,]
+data.test<-train_df_T[-samp,]
+x<-subset(data.test,select=-Survived)
+y<-data.test$Survived
+model<-svm(Survived~.,data=data.train)
+pred<-predict(model,x)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
+
+### 1. Survived와 Death의 비중을 동일하게 하여 예측력 구해보기
+
+```{r}
+table(train_df$Survived) # 549:342
+
+```
+
+### 2. Fare를 추가하여 예측해보기
+
+### 3. Age를 추가하여 예측해보기
+
+### 4. Fare, Age를 추가하여 예측해보기
+
+### 5. Age를 연령대로 구분하여 예측해보기
+
+### 6. 국가별로 구분하여 예측해보기
+
+### 7. Fare를 분류하여 예측해보기

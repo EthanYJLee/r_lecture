@@ -1,0 +1,356 @@
+# 타이타닉 데이터를 활용한 승선자의 생사 여부 예측
+
+### EDA(Exploral Data Analysis) : 탐색적 데이터 분석
+
+```{r}
+train_df<-read.csv("./Data/Titanic_train.csv")
+head(train_df)
+```
+
+```{r}
+tail(train_df)
+```
+
+```{r}
+str(train_df)
+```
+
+## 컬럼 내용 확인
+
+-   Survived: 생존 여부; 0=no, 1=yes
+
+-   Pclass: 티켓 등급; 1=1등급, 2=2등급, 3=3등급
+
+-   sibSp: 함께 탑승한 형제, 자매, 배우자의 수
+
+-   Parch: 함께 탑승한 부모, 자식의 수
+
+-   Fare: 운임
+
+-   Cabin: 객실번호 (""는 3등실)
+
+-   Embarked: 탑승항구; S=Southamton, C=Chersbourg, Q=QueensTown
+
+```{r}
+unique(train_df$Survived)
+unique(train_df$Sex)
+unique(train_df$Pclass)
+sum(is.na(train_df$Age))
+sum(is.na(train_df$Fare))
+unique(train_df$Embarked)
+```
+
+NA확인
+
+```{r}
+colSums(is.na(train_df))
+```
+
+Age 컬럼의 분석 가능여부 확인
+
+```{r}
+177/891
+```
+
+train_df의 age가 NA인것을 빼고 데이터셋 만들기
+
+```{r}
+age_not_na<-subset(train_df,!is.na(train_df$Age))
+age_not_na
+```
+
+Survived 정렬
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+train_df<-arrange(train_df, Survived)
+```
+
+Survived 기준으로 생존과 사망 Count 확인
+
+```{r}
+train_df
+table(train_df$Survived)
+train_df$Survived<-as.factor(train_df$Survived)
+```
+
+```{r}
+library(plotrix)
+label=paste(train_df$Survived,"\n",length(train_df$Survived)/nrow(train_df))
+
+pie3D(table(train_df$Survived),
+      labels=label,
+      explode=0.08)
+```
+
+타이타닉 생존수와 사망수 막대그래프
+
+```{r}
+nrow(subset(train_df,Survived==0))
+nrow(subset(train_df,Survived==1))
+nrow(subset(train_df,Survived==0))/nrow(train_df)
+nrow(subset(train_df,Survived==1))/nrow(train_df)
+```
+
+```{r}
+line=0.7
+barplot(table(train_df$Survived),
+        ylim=c(0,800),
+        beside = T,
+        names = c("사망", "생존"),
+        main = "타이타닉 생존수와 사망수",
+        xlab = "생존여부",
+        ylab = "인원수",
+        col = c("red","blue"),
+        )
+for(i in 1:2){
+  text(line,table(train_df$Survived)[i]+50,paste(table(train_df$Survived)[i],"명,\n",round(table(train_df$Survived)[i]/nrow(train_df),2),"%"),cex=0.8)
+       line=line+1.2
+}
+```
+
+### Feature Column 구성을 위해 Sex컬럼 분석
+
+```{r}
+unique(train_df$Sex)
+```
+
+```{r}
+train_df$Sex<-as.factor(train_df$Sex)
+```
+
+여성의 탑승 인원과 남성의 탑승 인원 확인
+
+```{r}
+table(train_df$Sex)
+head(train_df)
+
+```
+
+Target column (Survived)과 Feature column (Sex)은 차이가 있어야 한다.
+
+ML을 위한 최소 Feature \>=3
+
+Survived\<-[Sex]
+
+남성의 생존과 사망인원 수
+
+```{r}
+# nrow(subset(train_df,(Survived=="1")&&(Sex=="female"))
+maleSurvived<-nrow(subset(subset(train_df,Survived=="0"),Sex=="male"))
+maleDeath<-nrow(subset(subset(train_df,Survived=="1"),Sex=="male"))
+```
+
+여성의 생존과 사망인원 수
+
+```{r}
+femaleSurvived<-nrow(subset(subset(train_df,Survived=="1"),Sex=="female"))
+femaleDeath<-nrow(subset(subset(train_df,Survived=="0"),Sex=="female"))
+```
+
+```{r}
+maleSurvived
+maleDeath
+femaleSurvived
+femaleDeath
+```
+
+남성 생존,사망 & 여성 생존, 사망 비율에 차이가 있다=좋은feature
+
+```{r}
+m.s.r<-paste("생존\n",round(maleSurvived/nrow(subset(train_df,Sex=="male"))*100,2),"%")
+m.d.r<-paste("사망\n",round(maleDeath/nrow(subset(train_df,Sex=="male"))*100,2),"%")
+f.s.r<-paste("생존\n",round(femaleSurvived/nrow(subset(train_df,Sex=="female"))*100,2),"%")
+f.d.r<-paste("사망\n",round(femaleDeath/nrow(subset(train_df,Sex=="female"))*100,2),"%")
+```
+
+```{r}
+male_survive_ratio<-cbind(maleSurvived,maleDeath)
+female_survive_ratio<-cbind(femaleSurvived,femaleDeath)
+```
+
+```{r}
+
+pie3D(male_survive_ratio,
+      main = "타이타닉호 남성 생존율",
+      labels = c(m.s.r,m.d.r),
+      labelcex = 0.5,
+      radius = 1,
+      explode = 0.08
+      )
+```
+
+```{r}
+pie3D(female_survive_ratio,
+      main = "타이타닉호 여성 생존율",
+      labels = c(f.s.r,f.d.r),
+      labelcex = 0.5,
+      radius = 1,
+      explode = 0.08
+      )
+```
+
+\-\-\-\-\-\--Survived\<-[Sex]\-\-\-\-\-\--
+
+### 성별 승선 인원수
+
+```{r}
+barplot(table(train_df$Sex),
+        ylim=c(0,600),
+        col=c("red","blue"))
+```
+
+### 티켓 등급 분석
+
+```{r}
+table(train_df$Pclass)
+```
+
+1등 객실의 여성 생존율은 91/94, 96.81%
+
+```{r}
+firstfemale<-subset(train_df,(Pclass==1)&(Sex=="female"))
+nrow(subset(train_df,(Pclass==1)&(Sex=="female")))
+
+subset(train_df,Pclass==2)
+subset(train_df,Pclass==3)
+```
+
+```{r}
+nrow(subset(firstfemale,Survived==0))
+nrow(subset(firstfemale,Survived==1))
+```
+
+```{r}
+cat("1등 객실의 여성 생존율은", )
+```
+
+1, 2, 3등 객실의 여성 생존율을 for문을 이용해 해결
+
+```{r}
+nrow(subset(train_df,(Pclass==1)&(Sex=="female")&(Survived==1)))
+nrow(subset(train_df,(Pclass==1)&(Sex=="female")))
+subset(train_df,(Pclass==2)&(Sex=="female"))
+subset(train_df,(Pclass==3)&(Sex=="female"))
+```
+
+```{r}
+for(i in 1:3){
+  cat(i,"등 객실의 여성 생존율은",nrow(subset(train_df,(Pclass==i)&(Sex=="female")&(Survived==1))),"/",nrow(subset(train_df,(Pclass==i)&(Sex=="female"))),",",round(nrow(subset(train_df,(Pclass==i)&(Sex=="female")&(Survived==1)))/nrow(subset(train_df,(Pclass==i)&(Sex=="female")))*100,2),"%\n")
+}
+```
+
+### 1, 2, 3등 객실의 남성과 여성 생존율을 for문을 이용해 해결
+
+```{r}
+for(j in 2:1){
+  sex<-unique(train_df$Sex)[j]
+    if(sex=="male"){
+      sexKo<-"남성"
+    }else{
+      sexKo<-"여성"
+    }
+  for(i in 1:3){
+  cat(i,"등 객실의", sexKo, "생존율은",nrow(subset(train_df,(Pclass==i)&(Sex==sex)&(Survived==1))),"/",nrow(subset(train_df,(Pclass==i)&(Sex==sex))),",",round(nrow(subset(train_df,(Pclass==i)&(Sex==sex)&(Survived==1)))/nrow(subset(train_df,(Pclass==i)&(Sex==sex)))*100,2),"%\n")
+  }
+    cat("--------------------------------------------\n")
+}
+```
+
+\-\-\-\-\-\--Survived\<-[Sex, Pclass]\-\-\-\-\-\--
+
+```{r}
+head(train_df)
+```
+
+Survived\<-[Sex, Pclass, Embarked]
+
+Embarked와의 연관성 확인
+
+```{r}
+unique(train_df$Embarked)
+```
+
+```{r}
+train_df$Embarked<-factor(train_df$Embarked)
+str(train_df)
+```
+
+빈칸의 데이터 찾기
+
+```{r}
+nrow(subset(train_df,Embarked==""))
+subset(train_df,Embarked=="")
+# 귀족과 하녀 관계 유추 가능
+```
+
+```{r}
+# 다수결로 배정
+sum(train_df$Embarked=="S") # 644
+sum(train_df$Embarked=="C") # 168
+sum(train_df$Embarked=="Q") # 77
+sum(train_df$Embarked=="") # 2
+```
+
+```{r}
+# python은 배열로 처리한다 (subset 등등 없음)
+train_df$Embarked[train_df$Embarked==""]<-"S"
+```
+
+```{r}
+sum(train_df$Embarked=="S")
+sum(train_df$Embarked=="C")
+sum(train_df$Embarked=="Q")
+```
+
+남아있는 "" factor 제거 (factor 재구성)
+
+```{r}
+table(train_df$Embarked)
+train_df$Embarked<-factor(train_df$Embarked)
+```
+
+```{r}
+table(train_df$Embarked)
+```
+
+\-\-\-\-\-\--feature에 차이가 나므로 사용 가능\-\-\-\-\-\--
+
+### 항구별 성별 승선인원
+
+```{r}
+barplot(table(train_df$Sex,train_df$Embarked),
+        beside=T,
+        col=rep(c("red","blue"),3))
+```
+
+### 항구별 생존인원
+
+```{r}
+embSur<-table(train_df$Survived,train_df$Embarked)
+rownames(embSur)<-c("death","survive")
+barplot(embSur,
+        beside=T,
+        xlab="항구별",
+        ylab="인원수",
+        ylim=c(0,500),
+        col=rep(c("red","blue"),3),
+        legend.text = T)
+```
+
+### 항구별 객실 등급별 인원
+
+```{r}
+embClass<-table(train_df$Pclass,train_df$Embarked)
+rownames(embClass)<-c(1,2,3)
+barplot(embClass,
+        beside=T,
+        xlab="항구별 / 객실등급",
+        ylab="인원수",
+        ylim=c(0,500),
+        col=rep(c("red","blue","yellow"),3),
+        legend.text = T)
+```

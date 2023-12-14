@@ -1,0 +1,130 @@
+# 교통사고 예측하기 (회귀식과 RandomForest 예측 비교)
+
+```{r}
+seoul<-read.csv("./Data/newSeoul2019.csv")
+head(seoul)
+str(seoul)
+```
+
+종로구 데이터셋 만들기
+
+```{r}
+JongRo<-subset(seoul,자치구명=="종로구")
+JongRo
+```
+
+```{r}
+summary(JongRo)
+str(JongRo)
+JongRo[,-3]
+# 108/12=9년치
+```
+
+```{r}
+rownames(JongRo)<-c(1:(nrow(JongRo)))
+tail(JongRo)
+```
+
+종로구의 발생건수와 부상자수의 상관계수
+
+```{r}
+cor(JongRo$발생건수,JongRo$부상자수)
+```
+
+종로구의 발생건수와 부상자수의 산포도 및 회귀선 그리기
+
+```{r}
+acc_inj<-lm(부상자수~발생건수, JongRo)
+plot(JongRo$부상자수~JongRo$발생건수,
+     main="종로구의 발생건수와 부상자수의 산포도")
+abline(acc_inj,
+       col="red")
+```
+
+예측율과 회귀식
+
+```{r}
+acc_inj
+summary(acc_inj)
+```
+
+예측율: 0.8466
+
+부상자수= 1.36\*발생건수
+
+회귀식으로 발생건수가 100건일때의 부상자수 예측
+
+```{r}
+paste(1.36*100-2.886,"~",1.36*100+2.886)
+```
+
+랜덤포레스트로 발생건수가 100건일때의 부상자수 예측
+
+```{r}
+rf<-randomForest(부상자수~발생건수,data=JongRo,ntree=100)
+rf
+```
+
+```{r}
+pred<-0
+for(i in 1:5){
+pred<-pred+predict(rf,list(발생건수=100))
+}
+pred/5
+```
+
+발생건수가 145건일 경우 비교
+
+```{r}
+# regression
+paste(1.36*145-2.886,"~",1.36*145+2.886)
+# randomForest
+pred<-0
+for(i in 1:5){
+pred<-pred+predict(rf,list(발생건수=145))
+}
+pred/5
+```
+
+발생건수가 150건일 경우 비교
+
+```{r}
+# regression
+paste(1.36*150-2.886,"~",1.36*150+2.886)
+# randomForest
+pred<-0
+for(i in 1:5){
+pred<-pred+predict(rf,list(발생건수=150))
+}
+pred/5
+```
+
+발생건수가 200건일 경우 비교
+
+```{r}
+# regression
+paste(1.36*200-2.886,"~",1.36*200+2.886)
+# randomForest
+pred<-0
+for(i in 1:5){
+pred<-pred+predict(rf,list(발생건수=200))
+}
+pred/5
+```
+
+결론: 랜덤 포레스트(ML)는 데이터 분포가 많아야 유효하다
+
+데이터가 없는 범위는 측정하지 못함. (근접한 데이터로 계산하게 된다.)
+
+발생건수가 90건일 경우 비교
+
+```{r}
+# regression
+paste(1.36*90-2.886,"~",1.36*90+2.886)
+# randomForest
+pred<-0
+for(i in 1:5){
+pred<-pred+predict(rf,list(발생건수=90))
+}
+pred/5
+```

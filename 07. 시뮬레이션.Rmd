@@ -1,0 +1,104 @@
+# 시뮬레이션
+
+동전의 앞면 뒷면 시뮬레이션
+
+```{r}
+x <- runif(1);x
+if(x <= 1/2){
+  result = 0 # Front
+}else{
+  result = 1 # Rear
+}
+print(result)
+```
+
+```{r}
+coin <- function(n){
+  count1 = 0
+  count2 = 0
+  for(i in 1:n){
+    if(runif(1) <= 1/2){
+    count1 = count1 + 1
+    }else{
+    count2 = count2 + 1 
+    }
+    print(count1)
+    print(count2)
+  }
+}
+```
+
+```{r}
+coin(10)
+
+
+```
+
+가위, 바위, 보
+
+```{r}
+rsp <- function(n){
+  rock = 0
+  scissors = 0
+  paper = 0
+  for(i in 1:n){
+    
+  }
+  cat("바위:", rock, "\n")
+  cat("가위:", scissors, "\n")
+  cat("보:", paper, "\n")
+}
+
+rsp(1000000)
+```
+
+```{r}
+rock <- function(n){
+  scissor = 0
+  rock = 0
+  paper = 0
+  
+  for(i in 1:n){
+    x <- trunc(runif(1) * 3)+1
+    if(x == 1)scissor = scissor + 1
+    if(x == 2)rock = rock + 1
+    if(x == 3)paper = paper + 1
+  }
+  cat("가위:\t", scissor, "\n")
+  cat("바위:\t", rock, "\n")
+  cat("보:\t", paper, "\n")
+  cat("-----------------\n")
+}
+rock(10)
+rock(100)
+rock(1000)
+```
+
+```{r}
+trunc(runif(1)*6)+1
+result <- 1:6
+trunc(runif(1)*6)+1
+result[trunc(runif(1)*6)+1]
+```
+
+주사위 시뮬레이션
+
+```{r}
+# ************************************************************
+dice <- function(n){
+result <- rep(0,6)
+    cat("Throw : ", n, "\n")
+  for(i in 1:n){
+    x <-trunc(runif(1)*6)+1
+    result[x] = result[x]+1
+  }
+    for(i in 1:length(result))
+    cat("No", i, "=>",result[i],"\n")
+}
+
+dice(10)
+dice(100)
+dice(1000)
+options(scipen=100)
+dice(100000)
+```

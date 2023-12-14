@@ -1,0 +1,41 @@
+# Machine Learning Model 저장하기
+
+RamdomForest Model을 이용한 Species 예측
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+samp<-c(sample(1:50,35),sample(51:100,35),sample(101:150,35))
+iris.train<-iris[samp,]
+iris.test<-iris[-samp,]
+```
+
+```{r}
+rf<-randomForest(Species~.,data=iris.train,ntree=100)
+```
+
+```{r}
+x<-subset(iris.test, select=-Species)
+y<-iris.test$Species
+```
+
+```{r}
+pred<-predict(rf,x)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
+
+```{r}
+rf<-randomForest(Species~.,data=iris.train,ntree=100)
+```
+
+학습내용 저장하기
+
+```{r}
+saveRDS(rf,"./Data/randomForest_iris.rds")
+```

@@ -1,0 +1,114 @@
+# Mushroom
+
+### RandomForest를 이용한 버섯 분류
+
+ML단점: 숫자만 가능하다
+
+```{r}
+mr<-read.csv("./Data/mushroom.csv", header=F)
+head(mr)
+mr<-mr[-1,]
+mr
+```
+
+8124종류의 버섯의 특징과 독의 유무를 정리해 놓은 데이터셋
+
+V1: 독의 유무; 독(p), 식용(e)
+
+V2: 버섯의 머리모양; b(벨형태), c(원뿔), x(볼록), f(평평), k(혹)
+
+V4: 버섯의 머리색; n(갈색), b(황갈색), c(연한갈색), g(회색), r(녹색), p(분홍색), u(보라색), e(빨간색), w(흰색), y(노란색)
+
+머신러닝 사용을 위해선 숫자가 필요하고, 일일이 숫자로 바꾸지 않기 위해서 factor로 변경 후 factor의 숫자를 가져와야 함.
+
+```{r}
+for(i in 2:23){
+  mr[,i]<-as.factor(mr[,i])
+}
+head(mr)
+```
+
+```{r}
+for(i in 2:23){
+  mr[,i]<-as.numeric(mr[,i])
+}
+head(mr)
+```
+
+V1 기준으로 p와 e를 정렬
+
+```{r}
+library(dplyr)
+mr<-arrange(mr,V1)
+head(mr)
+tail(mr)
+```
+
+```{r}
+nrow(subset(mr,V1=="e"))
+nrow(subset(mr,V1=="p"))
+4208/(4208+3916)
+3916/(4208+3916)
+```
+
+Sampling
+
+```{r}
+set.seed(1234)
+library(caret)
+samp<-createDataPartition(mr$V1,p=0.7,list=F)
+data.train<-mr[samp,]
+data.test<-mr[-samp,]
+
+```
+
+```{r}
+x<-subset(data.test,select=-V1)
+y<-data.test$V1
+```
+
+```{r}
+library(randomForest)
+
+data.train[,1]<-as.factor(data.train[,1])
+
+rf<-randomForest(V1~.,data=data.train,ntree=3)
+pred<-predict(rf,x)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
+
+```{r}
+library(nnet)
+set.seed(1234)
+library(caret)
+```
+
+```{r}
+samp<-createDataPartition(mr$V1,p=0.7,list=F)
+data.train<-mr[samp,]
+data.test<-mr[-samp,]
+
+data.train[,1]<-as.factor(data.train[,1])
+data.train[,1]<-as.numeric(data.train[,1])
+data.test[,1]<-as.factor(data.test[,1])
+data.test[,1]<-as.numeric(data.test[,1])
+
+x<-subset(data.test,select=-V1)
+y<-data.test$V1
+x
+y
+```
+
+```{r}
+model.nnet<-nnet(V1~.,data=data.train,size=3)
+pred.nnet<-predict(model.nnet,x,type="raw")
+```
+
+```{r}
+mean(pred.nnet==y)
+table(pred.nnet,y)
+```

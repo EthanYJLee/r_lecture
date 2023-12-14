@@ -1,0 +1,21 @@
+# Rserve
+
+```{r}
+install.packages('Rserve')
+```
+
+```{r}
+library(Rserve)
+```
+
+```{r}
+install.packages('randomForest')
+```
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+Rserve(FALSE, port=6311, args = '--RS-encoding utf8 --no-save')
+```

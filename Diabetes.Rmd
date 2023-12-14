@@ -1,0 +1,531 @@
+# Diabetes
+
+```{r}
+diabetes<-read.csv("./Data/diabetes_data.csv")
+```
+
+```{r}
+colSums(is.na(diabetes))
+```
+
+```{r}
+str(diabetes)
+```
+
+### to factor
+
+```{r}
+head(diabetes)
+diabetes$Diabetes<-as.factor(diabetes$Diabetes)
+diabetes$Sex<-as.factor(diabetes$Sex)
+```
+
+### 이상치 확인
+
+```{r}
+boxplot(diabetes$BMI) #
+boxplot(diabetes$Age)
+# install.packages("dplyr")
+
+# library(dplyr)
+
+boxplot(diabetes$BMI)$stats # 13, 25, 29, 33, 45
+
+# BMI 이상치 제거
+diabetes$BMI<-ifelse(diabetes$BMI < 13 | diabetes$BMI > 45, NA, diabetes$BMI)
+table(is.na(diabetes$BMI)) # 68511:2181
+2181/(68511+2181) # 3%
+diabetes<-na.omit(diabetes)
+diabetes
+
+table(diabetes$Diabetes) # 34859:33652
+table(diabetes$Age)
+
+```
+
+## Diabetes Random Forest
+
+```{r}
+set.seed(1234)
+install.packages("caret")
+library(caret)
+samp<-createDataPartition(diabetes$Diabetes,p=0.7,list=F)
+data.train<-diabetes[samp,]
+data.test<-diabetes[-samp,]
+```
+
+```{r}
+library(randomForest)
+x<-subset(data.test,select=-Diabetes)
+y<-data.test$Diabetes
+
+rf<-randomForest(Diabetes~.,data = data.train,ntree=100)
+pred<-predict(rf,x)
+mean(pred==y)
+table(pred,y)
+
+```
+
+## Linear Regression Analysis
+
+```{r}
+str(diabetes)
+summary(diabetes$Age)
+summary(diabetes$Diabetes)
+```
+
+```{r}
+par(cex.axis=0.2)
+boxplot(diabetes)
+```
+
+### correlation
+
+```{r}
+cor(as.numeric(diabetes$Diabetes),diabetes$Age)
+cor(as.numeric(diabetes$Diabetes),diabetes$BMI)
+```
+
+```{r}
+lm(diabetes$Diabetes~diabetes$Age)
+lm(diabetes$Diabetes~diabetes$BMI)
+```
+
+## K-means Clustering
+
+```{r}
+install.packages("ggplot2")
+install.packages("factoextra")
+library(ggplot2)
+library(factoextra)
+```
+
+```{r}
+data<-diabetes
+data$Diabetes<-as.numeric(data$Diabetes)
+data$Sex<-as.numeric(data$Sex)
+data
+head(scale(data),n=1)
+```
+
+Age 분류
+
+```{r}
+age1<-subset(diabetes,Age==1)
+plot(table(diabetes$Age))
+kmeans(age1,1,nstart = 25)
+```
+
+# Stroke
+
+```{r}
+stroke<-read.csv("./Data/stroke_data.csv")
+stroke$work_type<-as.factor(stroke$work_type)
+table(stroke$age<0)
+boxplot(stroke$age)
+```
+
+```{r}
+data.frame(colSums(is.na(stroke)))
+```
+
+### Stroke 정렬
+
+```{r}
+library(dplyr)
+stroke<-arrange(stroke, stroke)
+tail(stroke)
+table(stroke$age)
+table(stroke$stroke)
+plot(stroke$age,stroke$stroke)
+stroke$stroke<-as.factor(stroke$stroke)
+stroke$sex<-as.factor(stroke$sex)
+stroke
+```
+
+```{r}
+nrow(subset(subset(stroke,stroke=="0"),sex=="0"))
+nrow(subset(subset(stroke,stroke=="0"),sex=="1"))
+nrow(subset(subset(stroke,stroke=="1"),sex=="0"))
+nrow(subset(subset(stroke,stroke=="1"),sex=="1"))
+```
+
+### 이상치 제거
+
+```{r}
+#stroke$age<-ifelse(stroke$age<0,NA,stroke$age)
+#stroke$age<-ifelse(stroke$age<18,NA,stroke$age)
+
+sum(is.na(stroke$age))
+
+# 나이 NA 제거
+stroke<-na.omit(stroke)
+table(stroke$stroke)
+stroke
+```
+
+## 18세 미만 제거한 후 예측값 비교 (vs 0세 미만 제거)
+
+18세 미만
+
+```{r}
+stroke.above18<-read.csv("./Data/stroke_data.csv")
+stroke.above18$work_type<-as.factor(stroke.above18$work_type)
+stroke.above18$age<-ifelse(stroke.above18$age<18,NA,stroke.above18$age)
+
+stroke.above18<-na.omit(stroke.above18)
+stroke.above18 # 38309/40910
+table(stroke.above18$age)
+```
+
+0세 미만
+
+```{r}
+stroke.above0<-read.csv("./Data/stroke_data.csv")
+stroke.above0$work_type<-as.factor(stroke.above0$work_type)
+stroke.above0$age<-ifelse(stroke.above0$age<0,NA,stroke.above0$age)
+
+stroke.above0<-na.omit(stroke.above0)
+stroke.above0 # 40849/40910
+table(stroke.above0$age)
+```
+
+```{r}
+table(stroke.above0$age<0)
+table(stroke.above18$age<18)
+re.stroke.above18<-lm(stroke~.,data = stroke.above18)
+re.stroke.above0<-lm(stroke~.,data = stroke.above0)
+summary(re.stroke.above18)
+summary(re.stroke.above0)
+summary(step(re.stroke.above18, direction = "backward"))
+summary(step(re.stroke.above0, direction = "backward"))
+```
+
+```{r}
+boxplot(stroke.above0)
+boxplot(stroke.above18)
+```
+
+## Stroke Random Forest (0)
+
+```{r}
+
+set.seed(1234)
+library(caret)
+samp<-createDataPartition(stroke.above0$stroke,p=0.7,list=F)
+stroke.above0.train<-stroke.above0[samp,]
+stroke.above0.test<-stroke.above0[-samp,]
+library(randomForest)
+x<-subset(stroke.above0.test,select=-stroke)
+y<-stroke.above0.test$stroke
+
+stroke.above0.train$stroke<-as.factor(stroke.above0.train$stroke)
+rf<-randomForest(stroke~.,data = stroke.above0.train,ntree=100)
+pred<-predict(rf,x)
+mean0<-mean(pred==y)
+table0<-table(pred,y)
+mean0
+table0
+```
+
+## Stroke Random Forest (18)
+
+```{r}
+set.seed(1234)
+library(caret)
+samp<-createDataPartition(stroke.above18$stroke,p=0.7,list=F)
+stroke.above18.train<-stroke.above18[samp,]
+stroke.above18.test<-stroke.above18[-samp,]
+library(randomForest)
+x<-subset(stroke.above18.test,select=-stroke)
+y<-stroke.above18.test$stroke
+
+stroke.above18.train$stroke<-as.factor(stroke.above18.train$stroke)
+rf<-randomForest(stroke~.,data = stroke.above18.train,ntree=100)
+pred<-predict(rf,x)
+mean18<-mean(pred==y)
+table18<-table(pred,y)
+mean18
+table18
+```
+
+## Stroke One Hot Encoding (0) (유아청소년+18,19세,20대+10대 단위로 cut)
+
+```{r}
+# 나이 컬럼 분류
+stroke.above0$age<-cut(stroke.above0$age, breaks = c(0,18,30,40,50,60,70,80,Inf),labels = c("유아청소년","20대","30대","40대","50대","60대","70대","80대 이상"))
+table(stroke.above0$age)
+```
+
+## Stroke One Hot Encoding (18) (청소년,20대+10대 단위 cut)
+
+```{r}
+# 나이 컬럼 분류
+stroke.above18$age<-cut(stroke.above18$age, breaks = c(17,30,40,50,60,70,80,Inf),labels = c("20대","30대","40대","50대","60대","70대","80대 이상"))
+table(stroke.above18$age)
+```
+
+```{r}
+summary(lm(as.numeric(stroke)~age,data = stroke.above0))
+summary(lm(as.numeric(stroke)~age,data = stroke.above18))
+```
+
+### 필요한 컬럼 갯수 파악
+
+```{r}
+stroke.above0
+stroke.above18
+
+num0<-c()
+num0=append(num0,length(unique(stroke.above0$age)))
+
+num18<-c()
+num18=append(num18,length(unique(stroke.above18$age)))
+
+num0
+num18
+```
+
+## Stroke Regression
+
+```{r}
+stroke<-read.csv("./Data/stroke_data.csv")
+stroke$age<-ifelse(stroke$age<0,NA,stroke$age)
+stroke<-na.omit(stroke)
+
+str(stroke)
+summary(stroke$age)
+cor(stroke$stroke, stroke$hypertension)
+```
+
+### Stroke Age Column Classification
+
+```{r}
+stroke<-read.csv("./Data/stroke_data.csv")
+colnames(stroke)
+
+table(stroke$age)
+
+as.data.frame(colnames(stroke))
+as.data.frame(colnames(diabetes))
+cor(stroke)
+cor(diabetes)
+library(Hmisc)
+describe(diabetes)
+table(diabetes$MentHlth)
+
+subset(diabetes$MentHlth, MentHlth!=0)
+as.data.frame((subset(diabetes, MentHlth>0))[,13])
+
+
+plot(table(diabetes$MentHlth))
+
+boxplot(stroke, cex.axis=0.5, xlab="\n", las=2)
+stroke # 40910
+subset(stroke, age>=18) # 38312 rows
+
+stroke$age<-cut(stroke$age, breaks = c(17,24,29,34,39,44,49,54,59,64,69,74,79,Inf), labels = c(1,2,3,4,5,6,7,8,9,10,11,12,13))
+stroke<-stroke[complete.cases(stroke[,2]),]
+table(stroke$age)
+```
+
+당뇨 Mental Health 이상치
+
+```{r}
+plot(table(diabetes$MentHlth))
+```
+
+```{r}
+par(family="AppleGothic")
+plot(table(as.data.frame((subset(diabetes, MentHlth>0))[,13])),ylab="MentHlth", xlab="일수/1개월", cex.axis=0.6)
+```
+
+```{r}
+par(family="AppleGothic")
+plot(table(diabetes$MentHlth),ylab="MentHlth", xlab="일수/1개월", cex.axis=0.6)
+```
+
+```{r}
+(nrow(subset(diabetes, MentHlth==0))/nrow(diabetes))
+(nrow(diabetes)-nrow(subset(diabetes, MentHlth==0)))/nrow(diabetes)
+```
+
+```{r}
+# 한 번이라도 정신적 불편을 경험한 경우
+boxplot(as.table((subset(diabetes, MentHlth>0))[,13]))
+```
+
+당뇨 Physical Health 이상치
+
+```{r}
+par(family="AppleGothic")
+plot(table(diabetes$PhysHlth),ylab="PhysHlth", xlab="일수/1개월", cex.axis=0.6)
+```
+
+```{r}
+par(family="AppleGothic")
+plot(table(as.data.frame((subset(diabetes, PhysHlth>0))[,14])),ylab="PhysHlth", xlab="일수/1개월", cex.axis=0.6)
+```
+
+```{r}
+(nrow(subset(diabetes, PhysHlth==0))/nrow(diabetes))
+(nrow(diabetes)-nrow(subset(diabetes, PhysHlth==0)))/nrow(diabetes)
+```
+
+```{r}
+summary(diabetes$PhysHlth)
+# mean: 5.81
+sd(diabetes$PhysHlth)
+# sd: 10.06226
+plot(diabetes$PhysHlth,dnorm(diabetes$PhysHlth,mean=5.81,sd=10.06226))
+# 한 번이라도 신체적 불편을 경험한 경우
+boxplot(table(as.data.frame(subset(diabetes, PhysHlth>0))[,14]))
+
+boxplot(as.table((subset(diabetes, PhysHlth>0))[,14]))
+
+boxplot(as.table((subset(diabetes, PhysHlth>=0))[,14]))
+
+
+```
+
+```{r}
+# 한 번이라도 신체적 불편을 경험한 경우
+boxplot(as.table((subset(diabetes, PhysHlth>0))[,14]))
+```
+
+BMI
+
+```{r}
+par(family="AppleGothic")
+plot(table(diabetes$BMI),ylab="BMI", xlab="BMI수치", cex.axis=0.6)
+```
+
+Diabetes BMI의 IQR과 이상치 확인 (**IQR (Interquartile Range) with Box plots)**
+
+```{r}
+IQR(diabetes$BMI)
+quantile(diabetes$BMI)
+summary(diabetes$BMI)
+25-1.5*IQR(diabetes$BMI)
+33+1.5*IQR(diabetes$BMI)
+```
+
+```{r}
+# <16, 16-17, 17-18.5, 18.5-25,25-30, 30-35,35-40,40<
+# 16,17,18.5,25,30,35,40
+par(family="AppleGothic")
+
+
+plot(table(diabetes$BMI),ylab="", xlab="BMI수치", cex.axis=0.6)
+abline(v=13, lwd=2, col="blue")
+abline(v=16, lwd=2, col="red")
+abline(v=17, lty=2,lwd=1, col="red")
+abline(v=18.5, lty=2,lwd=1, col="red")
+abline(v=25, lty=2,lwd=1, col="red")
+abline(v=30, lty=2,lwd=1, col="red")
+abline(v=35, lty=2,lwd=1, col="red")
+abline(v=40, lwd=2, col="red")
+abline(v=45, lwd=2, col="blue")
+legend("topright",legend=c("BMI 범위 구분","이상치 기준"),fill=c("red","blue"),box.lty=0,cex=0.8)
+
+# 이상치의 비율 확인
+subset(diabetes, BMI<13 | BMI>45) # 2181 rows
+2181/nrow(diabetes)
+```
+
+```{r}
+nrow(stroke)
+stroke<-na.omit(stroke)
+nrow(stroke)
+```
+
+# Cardio (Cholesterol)
+
+```{r}
+cardio<-read.csv("./Data/cardio_train.csv", sep = ";")
+sum(is.na(cardio))
+```
+
+```{r}
+cardio$BMI<-cardio$weight/(cardio$height*cardio$height/10000)
+cardio<-cardio[,-c(4,5)]
+cardio$age<-cardio$age/365
+boxplot(cardio$cholesterol, cardio$age)
+```
+
+콜레스테롤과 관련이 깊은 항목 찾기
+
+```{r}
+cardio.model<-lm(cholesterol~.,data = cardio)
+summary(cardio.model)
+cor(cardio)
+```
+
+관련 없는 항목부터 제거
+
+```{r}
+cardio.reduced<-step(cardio.model, direction = "backward")
+summary(cardio.reduced)
+hypertension$sex<-as.factor(hypertension$sex)
+```
+
+# Hypertension (Cholesterol)
+
+```{r}
+hypertension<-read.csv("./Data/hypertension_data.csv")
+hypertension
+sum(is.na(hypertension))
+hypertension<-na.omit(hypertension)
+colnames(hypertension)[14]<-"hypertension"
+```
+
+```{r}
+hypertension.model<-lm(chol~.,data = hypertension)
+summary(hypertension.model)
+cor(hypertension)
+```
+
+```{r}
+hypertension.reduced<-step(hypertension.model, direction = "backward")
+summary(hypertension.model)
+boxplot(hypertension, cex.axis=0.5)
+```
+
+## 한국인 ldl 콜레스테롤
+
+```{r}
+korean.chol<-read.csv("./Data/korean_chol.csv", fileEncoding = "euc-kr", header = TRUE)
+korean.chol
+summary(lm(korean.chol$측정값평균.mg.dL.~korean.chol$나이.세.))
+```
+
+# Structure
+
+```{r}
+install.packages("psych")
+library(psych)
+```
+
+```{r}
+describeBy(diabetes)
+```
+
+```{r}
+sum(is.na(diabetes))
+```
+
+```{r}
+describeBy(stroke)
+```
+
+```{r}
+str(stroke)
+```
+
+```{r}
+summary(diabetes)
+```
+
+```{r}
+table(diabetes)
+```

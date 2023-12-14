@@ -1,0 +1,91 @@
+# Stroke
+
+```{r}
+stroke<-read.csv("./Data/stroke_data.csv")
+head(stroke)
+```
+
+# Blood Pressure
+
+```{r}
+bp<-read.csv("./Data/bloodpressure.csv")
+bp$Level_of_Stress<-as.factor(bp$Level_of_Stress)
+head(bp)
+
+unique(bp[,"Level_of_Stress"])
+unique(bp[,"Blood_Pressure_Abnormality"])
+ftable(bp[c("Blood_Pressure_Abnormality","Level_of_Stress")])
+summary(lm(bp$Blood_Pressure_Abnormality~bp$Level_of_Stress))
+```
+
+# Cardio (Cholesterol)
+
+```{r}
+cardio<-read.csv("./Data/cardio_train.csv", sep = ";")
+
+cardio$BMI<-cardio$weight/(cardio$height*cardio$height/10000)
+head(cardio)
+
+cardio$gender<-as.factor(cardio$gender)
+
+table(cardio$cholesterol) # 52385:9549:8066
+table(cardio$cardio) # 35021:34979
+
+```
+
+```{r}
+library(caret)
+samp<-createDataPartition(cardio$cardio,p=0.7,list=F)
+data.train<-cardio[samp,]
+data.test<-cardio[-samp,]
+data.train # 49000 rows
+table(data.train$cardio)
+data.test # 21000 rows
+table(data.test$cardio)
+```
+
+```{r}
+x<-subset(data.test,select=-cardio)
+y<-data.test$cardio
+```
+
+```{r}
+library(randomForest)
+
+rf<-randomForest(cardio~.,data=data.train,ntree=100)
+pred<-predict(rf,x)
+mean(pred==y)
+table(pred,y)
+```
+
+```{r}
+head(data.train)
+randomForest(cardio~age,data=cardio,ntree=100)
+```
+
+```{r}
+lm(as.numeric(cardio$cholesterol)~cardio$gluc)
+```
+
+```{r}
+library(e1071)
+library(caret)
+samp<-createDataPartition(cardio$cholesterol,p=0.7,list=F)
+data.train<-cardio[samp,]
+data.test<-cardio[-samp,]
+x<-subset(data.test,select=-cholesterol)
+y<-data.test$cholesterol
+model<-svm(cholesterol~.,data=data.train)
+pred<-predict(model,x)
+mean(pred==y)
+table(pred,y)
+summary(pred)
+```
+
+```{r}
+pred[pred<-0.5]<-0
+pred[pred>0.5]<-1
+head(pred)
+mean(pred==y)
+table(pred,y)
+```

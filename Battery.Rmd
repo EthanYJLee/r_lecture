@@ -1,0 +1,74 @@
+```{r}
+battery<-read.csv("./Data/Smartphone_Evolution.csv", encoding = "utf-8", header = TRUE)
+head(battery)
+```
+
+```{r}
+# Release_Date, Display_Refresh_Rate Column 제거
+battery<-battery[,-c(4,12)]
+```
+
+```{r}
+library(dplyr)
+
+# NA값 0으로 replace
+battery[is.na(battery)]<-0
+
+samp<-sample(1:nrow(battery), nrow(battery)*0.7)
+battery.train<-battery[samp,]
+battery.test<-battery[-samp,]
+battery.train
+head(battery)
+
+library(randomForest)
+
+
+rf<-randomForest(Battery~.,data = battery.train,ntree=100)
+print(rf)
+
+x<-subset(battery.test, select=-Battery)
+y<-battery.test$Battery
+
+pred<-predict(rf,x)
+
+mean(pred==y)
+table(pred,y)
+```
+
+```{r}
+str(battery)
+boxplot(battery$Battery)
+
+# Display_Size, Battery 회귀
+bat<-lm(Battery~Display_Size, battery)
+bat
+```
+
+```{r}
+plot(Battery~Display_Size, battery)
+abline(bat, col="red")
+```
+
+```{r}
+plot(Battery~Memory, battery)
+abline(lm(Battery~Memory, battery), col="red")
+```
+
+```{r}
+plot(Battery~Primary_Storage, battery)
+abline(lm(Battery~Primary_Storage, battery), col="red")
+```
+
+```{r}
+battery$Brand<-as.factor(battery$Brand)
+battery$Display_Resolution<-as.factor(battery$Display_Resolution)
+nrow(battery)
+
+head(battery)
+unique(battery$Display_Resolution)
+unique(battery$Battery)
+
+model<-lm(Battery~Display_Size+Primary_Storage+Memory+Primary_Camera+Display_Resolution,battery)
+
+summary(model)
+```

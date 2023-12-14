@@ -1,0 +1,195 @@
+# Mushroom을 One-Hot Encoding으로 Machine Learning
+
+```{r}
+mr<-read.csv("./Data/mushroom.csv", header=F)
+mr<-mr[-1,]
+head(mr)
+
+```
+
+```{r}
+for(i in 1:23){
+  mr[,i]<-as.factor(mr[,i])
+}
+```
+
+```{r}
+for(i in 2:23){
+  mr[,i]<-as.numeric(mr[,i])
+}
+head(mr)
+```
+
+## One-Hot Encoding
+
+각 컬럼별 Data 확인
+
+```{r}
+for(i in 2:23){
+  cat("column name; ", colnames(mr)[i])
+  print(table(mr[,i]))
+  cat("---------------------")
+}
+```
+
+### 작업 수행 후의 컬럼 갯수 파악
+
+```{r}
+# 누적
+num<-c()
+for(i in 2:23){
+  num=append(num,length(unique(mr[,i])))
+}
+sum(num) # 117 (개의 컬럼이 필요하다)
+```
+
+### 별도의 DataFrame 생성
+
+```{r}
+mr2<-data.frame(V1=mr$V1)
+head(mr2)
+```
+
+```{r}
+sort(unique(mr$V2))
+```
+
+```{r}
+for(i in 2:23){
+  for(j in sort(unique(mr[,i]))){
+    mr2=cbind(mr2,mr[,i]==j) # T/F
+  }
+}
+mr2
+```
+
+```{r}
+ncol(mr2)
+```
+
+```{r}
+str(mr2)
+```
+
+```{r}
+library(dplyr)
+mr2<-arrange(mr2,V1) # <-컬럼이름 변경해야함
+head(mr2)
+```
+
+정렬을 하려고 하면 컬럼 이름때문에 error발생
+
+```{r}
+colnames(mr2)<-paste("V",1:118,sep="")
+head(mr2)
+```
+
+# Column이름과 One-Hot Encoding 한번에 처리하기
+
+```{r}
+mr3<-data.frame(V1=mr$V1)
+head(mr3)
+```
+
+```{r}
+count=2
+for(i in 2:23){
+  for(j in sort(unique(mr[,i]))){
+    mr3=cbind(mr3,mr[,i]==j)
+    colnames(mr3)[count]<-paste("V",i,"_",j,sep="")
+    count=count+1
+  }
+}
+head(mr3)
+```
+
+```{r}
+str(mr3)
+```
+
+```{r}
+mr3<-arrange(mr3,V1)
+head(mr3)
+```
+
+# 인공신경망
+
+```{r}
+library(nnet)
+library(caret)
+```
+
+```{r}
+samp1<-createDataPartition(mr3$V1,p=0.7,list=F)
+data.train<-mr3[samp1,]
+data.test<-mr3[-samp1,]
+```
+
+```{r}
+x<-subset(data.test,select=-V1)
+y<-data.test$V1
+```
+
+```{r}
+model.nnet<-nnet(V1~.,data=data.train,size=3)
+pred.nnet<-predict(model.nnet,x,type="class")
+```
+
+```{r}
+mean(pred.nnet==y)
+table(pred.nnet,y)
+```
+
+# RandomForest
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+samp2<-createDataPartition(mr3$V1,p=0.7,list=F)
+data.train<-mr3[samp2,]
+data.test<-mr3[-samp2,]
+```
+
+```{r}
+x<-subset(data.test,select=-V1)
+y<-data.test$V1
+```
+
+```{r}
+rf<-randomForest(V1~.,data=data.train,ntree=3)
+pred<-predict(rf,x)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
+
+# SVM
+
+```{r}
+library(e1071)
+```
+
+```{r}
+samp3<-createDataPartition(mr3$V1,p=0.7,list=F)
+data.train<-mr3[samp3,]
+data.test<-mr3[-samp3,]
+```
+
+```{r}
+x<-subset(data.test,select=-V1)
+y<-data.test$V1
+```
+
+```{r}
+model<-svm(V1~.,data=data.train)
+pred<-predict(model,x)
+```
+
+```{r}
+mean(pred==y)
+table(pred,y)
+```
